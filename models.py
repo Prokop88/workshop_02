@@ -1,4 +1,7 @@
-class Users:
+from clcrypto import hash_password
+
+
+class User:
     def __init__(self, username='', password='', salt=''):
         self._id = -1
         self.username = username
@@ -24,21 +27,43 @@ class Users:
         self.set_password(password)
 
     def save_to_db(self, cursor):
-        if self._id == -1:
-            sql = """ inset into users (username, hashed_password) values (%s, %s) returning id """
-            values(self.username, self.hashed_password)
+        if self._id != -1:
+            sql = """ UPDATE Users SET username = %S, hashed_password = %s WHERE id = %s"""
+            values = (self.username, self.hashed_password, self.id)
+            cursor.execute(sql, values)
+            return True
+        else:
+            sql = """INSERT INTO users(username, hashed_password)
+                            VALUES(%s, %s) RETURNING id"""
+            values = (self.username, self.hashed_password)
             cursor.execute(sql, values)  # tu nie musi być przecinek ??
             self._id = cursor.fetchone()[0]  # dlaczego nie fatchall ??
             return True
-        return False
 
-    @staticmethod  # funkcja jest statyczna – możemy jej używać na klasie, a nie na obiekcie.
+    @staticmethod
+    def load_all_users(cursor):
+        sql = "SELECT id, username, hashed_password FROM Users"
+        users = []
+        cursor.execute(sql)
+        for row in cursor.fetchall():
+            id_, username, hashed_password = row
+            loaded_user = User()
+            loaded_user._id = id_
+            loaded_user.username = username
+            loaded_user._hashed_password = hashed_password
+            users.append(loaded_user)
+        return users
+
+    def delete(self, cursor):
+        sql = """ DELETE FROM User WHERE id = %S"""
+        cursor.execute(sql, (self.id,))
+        self._id = -1
+        return True
+
+    @staticmethod
     def load_user_by_id(cursor, id_):
-        sql = select
-        id, username, hashed_password
-        from users where
-        id = % S
-        cursor.execute(sql, (id_,))
+        sql = "SELECT id, username, hashed_password FROM users WHERE id=%s"
+        cursor.execute(sql, (id_,))  # (id_, ) - cause we need a tuple
         data = cursor.fetchone()
         if data:
             id_, username, hashed_password = data
@@ -46,12 +71,6 @@ class Users:
             loaded_user._id = id_
             loaded_user._hashed_password = hashed_password
             return loaded_user
-        else:
-            return None
-
-    @staticmethod
-    def load_all_users(cursor):
-        pass
 
 
 class Messages():
