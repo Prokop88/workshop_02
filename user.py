@@ -18,13 +18,7 @@ print(args.username)
 
 
 def create_user(cur, username, password):
-    """
-    function create user
-    :param cur:
-    :param username: str
-    :param password: str
-    :return:
-    """
+
     if len(password) < 8:
         print("password is to short, must have 8 characters")
     else:
@@ -35,6 +29,7 @@ def create_user(cur, username, password):
         except UniqueViolation as err:
             print("user already exist ! ", err)
 
+
 def delete_user(cur, username, password):
     user = User.load_user_by_username(cur, username)
     if not user:
@@ -42,5 +37,39 @@ def delete_user(cur, username, password):
     elif check_password(password, user.hashed_password):
         user.delete(cur)
         print("user create")
-    elif:
+    else:
         print("incorrect password")
+
+
+def edit_user(cur, username, password, new_pass):
+    user = User.load_user_by_username(cur, username)
+    if not user:
+        print("user dont exist")
+    elif check_password(password, user.hashed_password):
+        if len(new_pass) < 8:
+            print("password to short, must have 8 characters")
+        else:
+            user.hashed_password = new_pass
+            user.save_to_db(cur)
+            print("password update")
+    else:
+        print("incorrect password")
+
+
+if __name__ == "__main__":
+    try:
+        cnx = connect(database="workshop", user="postgres", password="coderlabs", host="localhost")
+        cnx.autocommit = True
+        cursor = cnx.cursor()
+        if args.username and args.password and args.edit and args.new_pass:
+            edit_user(cursor, args.username, args.password, args.new_pass)
+        elif args.username and args.password and args.delete:
+            delete_user(cursor, args.username, args.password)
+        elif args.username and args.password:
+            create_user(cursor, args.username, args.password)
+        else:
+            parser.print_help()
+        cnx.close()
+    except OperationalError as e:
+        print("connection error", e)
+
