@@ -34,3 +34,13 @@ def create_user(cur, username, password):
             print("user create")
         except UniqueViolation as err:
             print("user already exist ! ", err)
+
+def delete_user(cur, username, password):
+    user = User.load_user_by_username(cur, username)
+    if not user:
+        print("user not exist")
+    elif check_password(password, user.hashed_password):
+        user.delete(cur)
+        print("user create")
+    elif:
+        print("incorrect password")
