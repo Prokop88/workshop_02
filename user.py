@@ -1,4 +1,9 @@
 import argparse
+from psycopg2 import connect, OperationalError
+from psycopg2.errors import UniqueViolation
+
+from clcrypto import check_password
+from models import User
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--username", help="username")
@@ -10,3 +15,22 @@ parser.add_argument("-e", "--edit", help="edit", action="store_true")
 
 args = parser.parse_args()
 print(args.username)
+
+
+def create_user(cur, username, password):
+    """
+    function create user
+    :param cur:
+    :param username: str
+    :param password: str
+    :return:
+    """
+    if len(password) < 8:
+        print("password is to short, must have 8 characters")
+    else:
+        try:
+            user = User(username=username, password=password)
+            user.save_to_db(cur)
+            print("user create")
+        except UniqueViolation as err:
+            print("user already exist ! ", err)
